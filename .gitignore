@@ -1,0 +1,6 @@
+my-*.yaml
+*.local.yaml
+.DS_Store
+
+# Local branding, not published
+chart/files/rubrik-logo.svg

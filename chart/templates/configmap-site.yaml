@@ -1,0 +1,176 @@
+{{- $proto := ternary "https" "http" .Values.tls.enabled }}
+{{- $logo := .Files.Get "files/rubrik-logo.svg" }}
+{{- $recent := list }}
+{{- range .Values.apps }}{{ if .recentPath }}{{ $recent = append $recent (dict "id" .id "name" .name "color" (default "#18c8b4" .color)) }}{{ end }}{{ end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "games.fullname" . }}-site
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "games.labels" . | nindent 4 }}
+data:
+  index.html: |
+    <!doctype html>
+    <html lang="en">
+    <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ .Values.menu.tabTitle | default .Values.menu.title | html }}</title>
+    <style>
+      :root { --bg:#070b16; --panel:#0f1629; --line:#1f2a48; --text:#e6ebff; --muted:#8a96b8; --accent:#18c8b4; }
+      * { box-sizing: border-box; }
+      body { margin:0; min-height:100vh; background:var(--bg); color:var(--text);
+             font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+             display:flex; flex-direction:column; align-items:center; }
+      header { text-align:center; padding:48px 20px 16px; }
+      .brand { display:flex; align-items:center; justify-content:center; gap:22px; flex-wrap:wrap; }
+      .brand img { height:44px; width:auto; }
+      h1 { margin:0; font-size:34px; letter-spacing:.18em; text-transform:uppercase; }
+      .sub { color:var(--muted); margin-top:10px; }
+      .grid { display:flex; flex-wrap:wrap; gap:20px; justify-content:center; padding:24px 20px; max-width:940px; }
+      .card { display:block; width:270px; padding:22px; background:var(--panel); border:1px solid var(--line);
+              border-radius:14px; color:var(--text); text-decoration:none; transition:transform .15s, border-color .15s; }
+      .card:hover { transform:translateY(-4px); border-color:var(--c, var(--accent)); }
+      .card h2 { margin:0 0 8px; font-size:20px; color:var(--c, var(--accent)); display:flex; align-items:center; gap:10px; }
+      .card h2 svg { width:34px; height:28px; flex:none; }
+      .card h2 img { height:30px; width:auto; flex:none; }
+      .card p { margin:0 0 18px; color:var(--muted); font-size:14px; line-height:1.45; min-height:62px; }
+      .btn { display:inline-block; background:var(--c, var(--accent)); color:#06101a; font-weight:700;
+             padding:8px 16px; border-radius:8px; font-size:14px; }
+      .recent { width:100%; max-width:580px; margin:8px 20px 0; padding:18px 22px; background:var(--panel);
+                border:1px solid var(--line); border-radius:14px; }
+      .recent h3 { margin:0 0 10px; font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+      .recent ul { list-style:none; margin:0; padding:0; }
+      .recent li { display:flex; align-items:center; gap:10px; padding:7px 0; border-top:1px solid var(--line); font-size:14px; }
+      .recent li:first-child { border-top:0; }
+      .dot { width:9px; height:9px; border-radius:50%; flex:none; }
+      .who { font-weight:700; }
+      .what { color:var(--muted); flex:1; }
+      .when { color:var(--muted); font-size:12px; white-space:nowrap; }
+      footer a { color:var(--muted); }
+      footer a:hover { color:var(--text); }
+      .credit { margin-top:6px; }
+      footer { color:var(--muted); font-size:12px; padding:30px 20px; text-align:center; }
+    </style>
+    </head>
+    <body>
+    <header>
+      <div class="brand">
+        {{- if $logo }}
+        <img src="data:image/svg+xml;base64,{{ $logo | b64enc }}" alt="Rubrik">
+        {{- end }}
+        <h1>{{ .Values.menu.title | html }}</h1>
+      </div>
+      <div class="sub">{{ .Values.menu.subtitle | html }}</div>
+    </header>
+    <div class="grid">
+    {{- range .Values.apps }}
+      <a class="card" href="{{ $proto }}://{{ .host }}" style="--c: {{ default "#18c8b4" .color }}">
+        <h2>
+          {{- if eq (default "" .icon) "ship" }}
+          <svg viewBox="-26 -21 52 40" aria-hidden="true"><path d="M0-18 10-3 24 10V15L8 9H-8L-24 15V10L-10-3Z" fill="currentColor"/><ellipse cx="0" cy="-9" rx="2.6" ry="5" fill="#fff"/><g stroke="#fff" stroke-width="1.5" stroke-linecap="round"><path d="M0-3V9M-5.6 0 5.6 6M-5.6 6 5.6 0"/></g></svg>
+          {{- else if eq (default "" .icon) "snowflake" }}
+          <svg viewBox="-14 -14 28 28" aria-hidden="true"><circle r="13" fill="currentColor"/><g stroke="#06101a" stroke-width="2" stroke-linecap="round"><path d="M0-8V8M-6.9-4 6.9 4M-6.9 4 6.9-4"/></g></svg>
+          {{- else if eq (default "" .icon) "image" }}
+          <img src="data:image/png;base64,{{ $.Files.Get (printf "files/icon-%s.png" .id) | b64enc }}" alt="" aria-hidden="true">
+          {{- end }}
+          <span>{{ .name | html }}</span>
+        </h2>
+        <p>{{ .description | html }}</p>
+        <span class="btn">Play</span>
+      </a>
+    {{- end }}
+    </div>
+    {{- if $recent }}
+    <section class="recent" id="recent" hidden>
+      <h3>Recent players</h3>
+      <ul id="recent-list"></ul>
+    </section>
+    {{- end }}
+    <footer>
+      <div>{{ .Values.menu.footer | html }}</div>
+      {{- if .Values.menu.credit }}
+      <div class="credit">&copy; {{ .Values.menu.copyrightYear }} {{ .Values.menu.credit | html }}
+        {{- if .Values.menu.creditEmail }} &middot; <a href="mailto:{{ .Values.menu.creditEmail }}">{{ .Values.menu.creditEmail | html }}</a>{{ end }}
+        {{- if .Values.menu.repoUrl }} &middot; <a href="{{ .Values.menu.repoUrl }}" target="_blank" rel="noopener">GitHub</a>{{ end }}</div>
+      {{- end }}
+    </footer>
+    {{- if $recent }}
+    <script>
+    (function () {
+      var apps = {{ $recent | toJson }};
+      var box = document.getElementById('recent');
+      var list = document.getElementById('recent-list');
+      function ago(ts) {
+        var s = Math.max(0, (Date.now() - new Date(ts).getTime()) / 1000);
+        if (!isFinite(s)) return '';
+        if (s < 90) return 'just now';
+        if (s < 5400) return Math.round(s / 60) + ' min ago';
+        if (s < 129600) return Math.round(s / 3600) + ' h ago';
+        return Math.round(s / 86400) + ' d ago';
+      }
+      function load() {
+        Promise.all(apps.map(function (a) {
+          return fetch('/api/recent/' + a.id, { cache: 'no-store' })
+            .then(function (r) { return r.ok ? r.json() : []; })
+            .then(function (rows) { return rows.map(function (x) { x.app = a; return x; }); })
+            .catch(function () { return []; });
+        })).then(function (all) {
+          var rows = [].concat.apply([], all).sort(function (a, b) { return new Date(b.ts) - new Date(a.ts); }).slice(0, 8);
+          list.textContent = '';
+          rows.forEach(function (x) {
+            var li = document.createElement('li');
+            var dot = document.createElement('span'); dot.className = 'dot'; dot.style.background = x.app.color;
+            var who = document.createElement('span'); who.className = 'who'; who.textContent = x.name;
+            var what = document.createElement('span'); what.className = 'what';
+            what.textContent = x.app.name + ' \u2022 ' + Number(x.score).toLocaleString() + (x.level ? ' pts, level ' + x.level : ' pts');
+            var when = document.createElement('span'); when.className = 'when'; when.textContent = ago(x.ts);
+            li.appendChild(dot); li.appendChild(who); li.appendChild(what); li.appendChild(when);
+            list.appendChild(li);
+          });
+          box.hidden = rows.length === 0;
+        });
+      }
+      load();
+      setInterval(load, 30000);
+    })();
+    </script>
+    {{- end }}
+    </body>
+    </html>
+{{- range .Values.apps }}
+{{- if .frame }}
+  wrap-{{ .id }}.html: |
+    <!doctype html>
+    <html lang="en">
+    <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ .name | html }}</title>
+    <style>
+      html, body { height:100%; margin:0; background:#070b16; }
+      body { display:flex; flex-direction:column; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      .bar { flex:none; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 16px;
+             background:#0f1629; border-bottom:1px solid #1f2a48; }
+      .bar a { color:#e6ebff; text-decoration:none; font-size:14px; font-weight:600; }
+      .bar a:hover { color:{{ default "#18c8b4" .color }}; }
+      .bar span { color:{{ default "#18c8b4" .color }}; font-size:13px; letter-spacing:.14em; text-transform:uppercase; }
+      iframe { flex:1; width:100%; border:0; background:#000; }
+    </style>
+    </head>
+    <body>
+    <div class="bar">
+      <a href="{{ $proto }}://{{ $.Values.menu.host }}">&larr; Back to {{ $.Values.menu.title | html }}</a>
+      <span>{{ .name | html }}</span>
+    </div>
+    <iframe id="app" src="{{ $proto }}://{{ .rawHost }}/" title="{{ .name | html }}" allow="fullscreen; autoplay; gamepad"></iframe>
+    <script>
+      var f = document.getElementById('app');
+      f.addEventListener('load', function () { f.focus(); });
+      window.addEventListener('focus', function () { f.focus(); });
+    </script>
+    </body>
+    </html>
+{{- end }}
+{{- end }}

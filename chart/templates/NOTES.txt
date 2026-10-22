@@ -1,0 +1,23 @@
+Rubrik Games gateway installed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+
+1. Get the gateway's IP (wait for EXTERNAL-IP):
+     kubectl get svc {{ include "games.fullname" . }} -n {{ .Release.Namespace }} -w
+
+2. Point DNS at that IP. Create A records (or one wildcard record) for:
+     {{ .Values.menu.host }}   (the menu)
+{{- range .Values.apps }}
+     {{ .host }}   ({{ .name }})
+{{- end }}
+{{- if .Values.tls.enabled }}
+
+3. HTTPS is on. Caddy requests the certificates once DNS resolves to this IP and ports 80 and 443 are open.
+   Watch it work:
+     kubectl logs deploy/{{ include "games.fullname" . }} -n {{ .Release.Namespace }} -f
+{{- else }}
+
+3. HTTPS is off (tls.enabled=false), so everything is served over plain HTTP. Any unknown host,
+   including the raw IP address, shows the menu.
+{{- end }}
+
+Each app must be reachable inside the cluster at the "upstream" address in values.yaml. Change an app's
+Service to ClusterIP when it should only be reached through the gateway.

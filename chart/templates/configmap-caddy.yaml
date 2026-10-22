@@ -1,0 +1,69 @@
+{{- $scheme := ternary "" "http://" .Values.tls.enabled }}
+{{- $proto := ternary "https" "http" .Values.tls.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "games.fullname" . }}-caddy
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "games.labels" . | nindent 4 }}
+data:
+  Caddyfile: |
+    {
+      {{- if .Values.tls.email }}
+      email {{ .Values.tls.email }}
+      {{- end }}
+      {{- if .Values.tls.staging }}
+      acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+      {{- end }}
+      {{- if not .Values.tls.enabled }}
+      auto_https off
+      {{- end }}
+    }
+
+    {{ $scheme }}{{ .Values.menu.host }} {
+      encode gzip
+      {{- if and $.Values.tls.enabled $.Values.tls.hsts }}
+      header Strict-Transport-Security "max-age=31536000"
+      {{- end }}
+      {{- include "games.menuRoutes" . | nindent 6 }}
+    }
+    {{- range .Values.apps }}
+
+    {{ $scheme }}{{ .host }} {
+      encode gzip
+      {{- if and $.Values.tls.enabled $.Values.tls.hsts }}
+      header Strict-Transport-Security "max-age=31536000"
+      {{- end }}
+      {{- if .frame }}
+      root * /srv
+      rewrite * /wrap-{{ .id }}.html
+      file_server
+      {{- else }}
+      reverse_proxy {{ .upstream }} {
+        header_up X-Games-Menu {{ $proto }}://{{ $.Values.menu.host }}
+      }
+      {{- end }}
+    }
+    {{- if .frame }}
+
+    # The real app, shown inside the wrapper page's frame.
+    {{ $scheme }}{{ .rawHost }} {
+      encode gzip
+      {{- if and $.Values.tls.enabled $.Values.tls.hsts }}
+      header Strict-Transport-Security "max-age=31536000"
+      {{- end }}
+      reverse_proxy {{ .upstream }} {
+        header_up X-Games-Menu {{ $proto }}://{{ $.Values.menu.host }}
+        header_down -X-Frame-Options
+      }
+    }
+    {{- end }}
+    {{- end }}
+    {{- if not .Values.tls.enabled }}
+
+    # Unknown hosts (for example the raw IP address) get the menu.
+    :80 {
+      {{- include "games.menuRoutes" . | nindent 6 }}
+    }
+    {{- end }}

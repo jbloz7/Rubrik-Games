@@ -1,0 +1,11 @@
+apiVersion: v2
+name: rubrik-games
+description: A single front door for demo apps. One public IP serves a games menu page and routes each hostname to an app, with automatic HTTPS (Caddy).
+type: application
+version: 0.1.0
+appVersion: "2"
+keywords:
+  - demo
+  - gateway
+  - caddy
+  - reverse-proxy

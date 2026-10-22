@@ -1,0 +1,38 @@
+# Example values for the Rubrik Games gateway. Copy to my-games-values.yaml (git ignores my-*.yaml), edit, then:
+#   helm upgrade --install rubrik-games ./chart -n rubrik-games --create-namespace -f my-games-values.yaml
+
+menu:
+  host: games.example.com
+
+# Replace the whole list to add or remove apps. Every host needs a DNS record pointing at the gateway's IP.
+apps:
+  - id: invaders
+    name: Rubrik Invaders
+    description: Defend the cluster from rival backup ships. Shoot the ransomware ship for a power-up.
+    color: "#18c8b4"
+    icon: image                    # ship | snowflake | image (files/icon-<id>.png) | empty
+    host: invaders.example.com
+    upstream: rubrik-invaders.rubrik-invaders.svc.cluster.local:80
+    recentPath: /api/recent       # feeds the "Recent players" panel; leave empty if the app has none
+  - id: chase
+    name: Rubrik Chase
+    description: Outrun ransomware, phishing and friends through the maze. Power pellets turn the tables, but less each level.
+    color: "#18c8b4"
+    icon: image
+    host: chase.example.com
+    upstream: rubrik-chase.rubrik-chase.svc.cluster.local:80
+    recentPath: /api/recent
+
+
+tls:
+  enabled: true
+  email: you@example.com        # Let's Encrypt contact
+  staging: false                # set true while testing to avoid rate limits
+
+service:
+  annotations:
+    # Optional static IP (AKS): a Standard SKU public IP in the cluster's node resource group
+    service.beta.kubernetes.io/azure-pip-name: rubrik-k8s-games-pip
+
+# Optional: put the Rubrik logo on the menu. Copy a white-text SVG to chart/files/rubrik-logo.svg
+# before installing (git ignores that file). Without it the menu simply shows no logo.

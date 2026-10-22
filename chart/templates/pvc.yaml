@@ -1,0 +1,21 @@
+{{- if include "games.persist" . }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "games.fullname" . }}-data
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "games.labels" . | nindent 4 }}
+  annotations:
+    # Keep the certificates if the release is uninstalled, so a reinstall does not request new ones
+    # (Let's Encrypt limits how many certificates can be issued for the same names each week).
+    helm.sh/resource-policy: keep
+spec:
+  accessModes: ["ReadWriteOnce"]
+  {{- if .Values.persistence.storageClass }}
+  storageClassName: {{ .Values.persistence.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.size | quote }}
+{{- end }}

@@ -1,0 +1,94 @@
+# Rubrik Games: one public IP in front of several demo apps.
+#
+# Suggested install (put your own hostnames in a local values file, see examples/):
+#   helm install rubrik-games ./chart -n rubrik-games --create-namespace -f my-games-values.yaml
+#
+# Each app is reached by its own hostname, and all hostnames point at this chart's
+# LoadBalancer IP (one wildcard DNS record can cover them all).
+
+fullnameOverride: ""
+
+# Stock Caddy image. The configuration and the menu page are delivered in ConfigMaps.
+image:
+  repository: caddy
+  tag: 2-alpine
+  pullPolicy: IfNotPresent
+
+# The menu page
+menu:
+  host: games.example.com
+  title: Games                 # the Rubrik logo sits beside it, so the heading doesn't repeat the name
+  tabTitle: Rubrik Games       # browser tab title
+  subtitle: Pick a game
+  footer: Demo apps for Kubernetes backup and restore
+  # Credit line under the footer. Clear credit to hide it.
+  credit: James Blower
+  copyrightYear: 2026
+  creditEmail: james.blower@rubrik.com
+  repoUrl: https://github.com/jbloz7/Rubrik-Games
+
+# The apps behind the gateway. Replace this whole list in your own values file to add or remove apps.
+#   name / description / color  how the app appears on the menu
+#   host                        the hostname people use (needs a DNS record pointing at this IP)
+#   upstream                    the app's in-cluster Service: <service>.<namespace>.svc.cluster.local:<port>
+apps:
+  # id          short name used in the menu's data path (/api/recent/<id>)
+  # icon        ship | snowflake | image | (empty for none). "image" uses files/icon-<id>.png in this chart
+  # recentPath  optional: path on the app that returns a JSON list of recent games
+  #             [{"name": "...", "score": 123, "level": 2, "ts": "..."}], newest first.
+  #             The menu shows these under "Recent players". Leave empty for apps without one.
+  # frame       optional: true serves the app inside a thin "Back to <menu title>" bar. The app then needs a second
+  #             hostname, rawHost, with its own DNS record. For apps you can't edit. The app must allow being framed.
+  - id: invaders
+    name: Rubrik Invaders
+    description: Defend the cluster from rival backup ships. Shoot the ransomware ship for a power-up.
+    color: "#18c8b4"
+    icon: image
+    host: invaders.example.com
+    upstream: rubrik-invaders.rubrik-invaders.svc.cluster.local:80
+    recentPath: /api/recent
+  - id: chase
+    name: Rubrik Chase
+    description: Outrun ransomware, phishing and friends through the maze. Power pellets turn the tables, but less each level.
+    color: "#18c8b4"
+    icon: image
+    host: chase.example.com
+    upstream: rubrik-chase.rubrik-chase.svc.cluster.local:80
+    recentPath: /api/recent
+
+# HTTPS. When enabled, Caddy requests and renews Let's Encrypt certificates by itself.
+# It needs: DNS for every host pointing at this IP, and ports 80 and 443 reachable from the internet.
+# When disabled the gateway serves plain HTTP and any unknown host (such as the raw IP) shows the menu.
+tls:
+  enabled: false
+  email: ""          # contact address for Let's Encrypt (recommended)
+  # HTTPS only: with tls.enabled, Caddy already redirects every http:// request to https://.
+  # Port 80 stays open for that redirect and for certificate issuance. hsts also tells browsers to
+  # never try http:// again (sticky for a year, so turn on only once real certificates work).
+  hsts: false
+  staging: false     # true = use Let's Encrypt staging while testing, to avoid rate limits
+
+# Keeps certificates across restarts (used only when tls.enabled is true).
+persistence:
+  enabled: true
+  size: 256Mi
+  storageClass: ""   # empty = the cluster default
+
+service:
+  type: LoadBalancer
+  # Optional static IP on AKS: a Standard SKU public IP in the node resource group, then
+  #   annotations:
+  #     service.beta.kubernetes.io/azure-pip-name: games-pip
+  annotations: {}
+  loadBalancerIP: ""
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 32Mi
+  limits:
+    memory: 128Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
