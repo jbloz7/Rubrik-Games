@@ -61,7 +61,7 @@ spec:
               mountPath: /data
             - name: config
               mountPath: /config
-            {{- if and .Values.tls.enabled (eq (default "acme" .Values.tls.mode) "secret") }}
+            {{- if include "games.needTLSSecret" . }}
             - name: tls
               mountPath: /etc/games-tls
               readOnly: true
@@ -82,7 +82,7 @@ spec:
           {{- end }}
         - name: config
           emptyDir: {}
-        {{- if and .Values.tls.enabled (eq (default "acme" .Values.tls.mode) "secret") }}
+        {{- if include "games.needTLSSecret" . }}
         - name: tls
           secret:
             secretName: {{ .Values.tls.secretName }}

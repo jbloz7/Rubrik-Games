@@ -59,6 +59,24 @@ kubectl annotate svc <app> -n <namespace> service.beta.kubernetes.io/azure-pip-n
 
 If you back the app up with Rubrik, take a new backup afterwards. Older snapshots contain the old LoadBalancer Service, and restoring one would try to claim the IP the gateway now uses.
 
+## Internal always on, public on demand
+
+The gateway can serve two sets of hostnames at once, from the same pod:
+
+- **Internal** (`menu.internalHost` and each app's `internalHost`): reached through the internal load balancer, optionally published with Azure Private Link (see `examples/values-private-link.yaml`). Always on. Certificates come from Caddy's own CA (`internalHosts.tlsMode: internal`) or your own certificate (`secret`).
+- **Public** (`menu.host` and each app's `host`): reached through a second Service, `publicService`, which is off by default so there is no public listener. Certificates come from Let's Encrypt.
+
+See `examples/values-dual.yaml`. The menu page and each app's "Back to Games" link follow the hostname you came in on. Turn the public side on for a demo and off afterwards:
+
+```bash
+helm upgrade rubrik-games ./chart -n rubrik-games -f my-games-values.yaml --set publicService.enabled=true
+helm upgrade rubrik-games ./chart -n rubrik-games -f my-games-values.yaml
+```
+
+Restrict who can reach the public side with `publicService.loadBalancerSourceRanges`. Let's Encrypt can only issue or renew the public certificates while that Service is reachable, so certificates are renewed during demo windows. Check expiry beforehand.
+
+To trust Caddy's internal root on a Mac: `sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain caddy-root.crt` (export it from `/data/caddy/pki/authorities/local/root.crt` in the pod).
+
 ## Protecting it with Rubrik
 
 Add the `rubrik-games` namespace to a Kubernetes protection set if you want the certificates PVC protected.

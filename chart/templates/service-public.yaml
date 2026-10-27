@@ -1,0 +1,33 @@
+{{- if .Values.publicService.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "games.fullname" . }}-public
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "games.labels" . | nindent 4 }}
+  {{- with .Values.publicService.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: LoadBalancer
+  {{- if .Values.publicService.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.publicService.loadBalancerIP | quote }}
+  {{- end }}
+  {{- if .Values.publicService.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+    {{- toYaml .Values.publicService.loadBalancerSourceRanges | nindent 4 }}
+  {{- end }}
+  selector:
+    {{- include "games.selector" . | nindent 4 }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+    {{- if .Values.tls.enabled }}
+    - name: https
+      port: 443
+      targetPort: 443
+    {{- end }}
+{{- end }}

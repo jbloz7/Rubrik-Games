@@ -1,6 +1,8 @@
 {{- $scheme := ternary "" "http://" .Values.tls.enabled }}
 {{- $proto := ternary "https" "http" .Values.tls.enabled }}
 {{- $mode := default "acme" .Values.tls.mode }}
+{{- $internalOn := and .Values.tls.enabled .Values.internalHosts.enabled }}
+{{- $imode := default "internal" .Values.internalHosts.tlsMode }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -25,20 +27,37 @@ data:
       {{- end }}
     }
 
-    {{ $scheme }}{{ .Values.menu.host }} {
+    # The menu page and each app's routes are snippets, so the same content can be served on both the
+    # public hostnames and the internal hostnames. {args[0]} is the menu URL handed to the app.
+    (menu_site) {
       encode gzip
-      {{- if and $.Values.tls.enabled $.Values.tls.hsts }}
+      {{- include "games.menuRoutes" . | nindent 6 }}
+    }
+    {{- range .Values.apps }}
+    {{- if not .frame }}
+
+    (app_{{ .id }}) {
+      encode gzip
+      reverse_proxy {{ .upstream }} {
+        header_up X-Games-Menu {args[0]}
+      }
+    }
+    {{- end }}
+    {{- end }}
+
+    # ---- public hostnames
+    {{ $scheme }}{{ .Values.menu.host }} {
+      {{- if and .Values.tls.enabled .Values.tls.hsts }}
       header Strict-Transport-Security "max-age=31536000"
       {{- end }}
-      {{- if and $.Values.tls.enabled (eq $mode "secret") }}
+      {{- if and .Values.tls.enabled (eq $mode "secret") }}
       tls /etc/games-tls/tls.crt /etc/games-tls/tls.key
       {{- end }}
-      {{- include "games.menuRoutes" . | nindent 6 }}
+      import menu_site
     }
     {{- range .Values.apps }}
 
     {{ $scheme }}{{ .host }} {
-      encode gzip
       {{- if and $.Values.tls.enabled $.Values.tls.hsts }}
       header Strict-Transport-Security "max-age=31536000"
       {{- end }}
@@ -46,13 +65,12 @@ data:
       tls /etc/games-tls/tls.crt /etc/games-tls/tls.key
       {{- end }}
       {{- if .frame }}
+      encode gzip
       root * /srv
       rewrite * /wrap-{{ .id }}.html
       file_server
       {{- else }}
-      reverse_proxy {{ .upstream }} {
-        header_up X-Games-Menu {{ $proto }}://{{ $.Values.menu.host }}
-      }
+      import app_{{ .id }} {{ $proto }}://{{ $.Values.menu.host }}
       {{- end }}
     }
     {{- if .frame }}
@@ -73,10 +91,41 @@ data:
     }
     {{- end }}
     {{- end }}
+    {{- if and $internalOn .Values.menu.internalHost }}
+
+    # ---- internal hostnames (reached through the internal load balancer / Private Link)
+    {{ .Values.menu.internalHost }} {
+      {{- if .Values.internalHosts.hsts }}
+      header Strict-Transport-Security "max-age=31536000"
+      {{- end }}
+      {{- if eq $imode "secret" }}
+      tls /etc/games-tls/tls.crt /etc/games-tls/tls.key
+      {{- else }}
+      tls internal
+      {{- end }}
+      import menu_site
+    }
+    {{- range .Values.apps }}
+    {{- if and .internalHost (not .frame) }}
+
+    {{ .internalHost }} {
+      {{- if $.Values.internalHosts.hsts }}
+      header Strict-Transport-Security "max-age=31536000"
+      {{- end }}
+      {{- if eq $imode "secret" }}
+      tls /etc/games-tls/tls.crt /etc/games-tls/tls.key
+      {{- else }}
+      tls internal
+      {{- end }}
+      import app_{{ .id }} https://{{ $.Values.menu.internalHost }}
+    }
+    {{- end }}
+    {{- end }}
+    {{- end }}
     {{- if not .Values.tls.enabled }}
 
     # Unknown hosts (for example the raw IP address) get the menu.
     :80 {
-      {{- include "games.menuRoutes" . | nindent 6 }}
+      import menu_site
     }
     {{- end }}

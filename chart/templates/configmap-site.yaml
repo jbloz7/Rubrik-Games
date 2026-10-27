@@ -66,7 +66,7 @@ data:
     </header>
     <div class="grid">
     {{- range .Values.apps }}
-      <a class="card" href="{{ $proto }}://{{ .host }}" style="--c: {{ default "#18c8b4" .color }}">
+      <a class="card" href="{{ $proto }}://{{ .host }}"{{ if and $.Values.menu.internalHost .internalHost }} data-internal="https://{{ .internalHost }}"{{ end }} style="--c: {{ default "#18c8b4" .color }}">
         <h2>
           {{- if eq (default "" .icon) "ship" }}
           <svg viewBox="-26 -21 52 40" aria-hidden="true"><path d="M0-18 10-3 24 10V15L8 9H-8L-24 15V10L-10-3Z" fill="currentColor"/><ellipse cx="0" cy="-9" rx="2.6" ry="5" fill="#fff"/><g stroke="#fff" stroke-width="1.5" stroke-linecap="round"><path d="M0-3V9M-5.6 0 5.6 6M-5.6 6 5.6 0"/></g></svg>
@@ -96,6 +96,17 @@ data:
         {{- if .Values.menu.repoUrl }} &middot; <a href="{{ .Values.menu.repoUrl }}" target="_blank" rel="noopener">GitHub</a>{{ end }}</div>
       {{- end }}
     </footer>
+    {{- if .Values.menu.internalHost }}
+    <script>
+    (function () {
+      // Opened on the internal menu hostname: send the cards to the internal app hostnames too.
+      if (location.hostname !== {{ .Values.menu.internalHost | toJson }}) return;
+      document.querySelectorAll('a.card[data-internal]').forEach(function (a) {
+        a.href = a.getAttribute('data-internal');
+      });
+    })();
+    </script>
+    {{- end }}
     {{- if $recent }}
     <script>
     (function () {

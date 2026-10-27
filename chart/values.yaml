@@ -26,6 +26,9 @@ menu:
   copyrightYear: 2026
   creditEmail: james.blower@rubrik.com
   repoUrl: https://github.com/jbloz7/Rubrik-Games
+  # Optional internal hostname for the menu (for example games.perf.rubrik.com). Each app can set
+  # internalHost too. See internalHosts below.
+  internalHost: ""
 
 # The apps behind the gateway. Replace this whole list in your own values file to add or remove apps.
 #   name / description / color  how the app appears on the menu
@@ -74,6 +77,23 @@ tls:
   #   secret    your own certificate from a kubernetes.io/tls Secret (for example one issued by an internal CA).
   mode: acme
   secretName: rubrik-games-tls   # used when mode is secret; must cover every hostname
+
+# Serve the same menu and apps on a second, internal set of hostnames (menu.internalHost and each app's
+# internalHost). Use it with an internal load balancer / Private Link on `service`, and a separate public
+# Service (publicService) that you switch on only when you want the public hostnames reachable.
+internalHosts:
+  enabled: false
+  tlsMode: internal      # internal = Caddy's own CA; secret = your own certificate from tls.secretName
+  hsts: false
+
+# A second, public LoadBalancer Service for the public hostnames (menu.host and each app's host).
+# Leave it off and the gateway has no public listener; turn it on for a demo:
+#   helm upgrade ... --set publicService.enabled=true
+publicService:
+  enabled: false
+  annotations: {}                 # for example service.beta.kubernetes.io/azure-pip-name: <your static IP>
+  loadBalancerIP: ""
+  loadBalancerSourceRanges: []    # for example ["203.0.113.7/32"] to allow only the customer's address
 
 # Keeps certificates across restarts (used only when tls.enabled is true).
 persistence:

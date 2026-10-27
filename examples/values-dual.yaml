@@ -1,0 +1,62 @@
+# Example: internal hostnames always on, public hostnames on demand. Copy to my-games-values.yaml (git ignores my-*.yaml).
+#   helm upgrade --install rubrik-games ./chart -n rubrik-games --create-namespace -f my-games-values.yaml
+# Internal (always on): games.internal.example.com -> Private Endpoint IP (private endpoint IP) -> Private Link -> internal LB
+# Public (switch on for demos): games.example.com -> <static public IP> (<static public IP name>)
+#   on:  helm upgrade rubrik-games ./chart -n rubrik-games -f my-games-values.yaml --set publicService.enabled=true
+#   off: helm upgrade rubrik-games ./chart -n rubrik-games -f my-games-values.yaml
+
+menu:
+  host: games.example.com
+  internalHost: games.internal.example.com
+
+apps:
+  - id: invaders
+    name: Rubrik Invaders
+    description: Defend the cluster from rival backup ships. Shoot the ransomware ship for a power-up.
+    color: "#18c8b4"
+    icon: image
+    host: invaders.games.example.com
+    internalHost: invaders.games.internal.example.com
+    upstream: rubrik-invaders.rubrik-invaders.svc.cluster.local:80
+    recentPath: /api/recent
+  - id: chase
+    name: Rubrik Chase
+    description: Outrun ransomware, phishing and friends through the maze. Power pellets turn the tables, but less each level.
+    color: "#18c8b4"
+    icon: image
+    host: chase.games.example.com
+    internalHost: chase.games.internal.example.com
+    upstream: rubrik-chase.rubrik-chase.svc.cluster.local:80
+    recentPath: /api/recent
+
+tls:
+  enabled: true
+  email: "you@example.com"     # Let's Encrypt contact for the public names
+  mode: acme                  # public names use Let's Encrypt
+  hsts: true                  # public names only
+  staging: false
+
+# Internal names: Caddy's own CA until a Rubrik-issued certificate is available
+# (then set tlsMode: secret and create the rubrik-games-tls Secret).
+internalHosts:
+  enabled: true
+  tlsMode: internal
+  hsts: false
+
+# The main Service is internal only, published through Private Link.
+service:
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    service.beta.kubernetes.io/azure-pls-create: "true"
+    service.beta.kubernetes.io/azure-pls-name: "rubrik-games-pls"
+    service.beta.kubernetes.io/azure-pls-ip-configuration-subnet: "aks-subnet"
+    service.beta.kubernetes.io/azure-pls-ip-configuration-ip-address-count: "1"
+    service.beta.kubernetes.io/azure-pls-visibility: "<subscription id that owns the Private Endpoint>"
+    service.beta.kubernetes.io/azure-pls-auto-approval: "<subscription id that owns the Private Endpoint>"
+
+# The public Service, off by default. The static IP lives here.
+publicService:
+  enabled: false
+  annotations:
+    service.beta.kubernetes.io/azure-pip-name: <static public IP name>
+  # loadBalancerSourceRanges: ["203.0.113.7/32"]   # optionally restrict to the customer's address

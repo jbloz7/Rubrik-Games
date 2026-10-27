@@ -35,3 +35,10 @@ handle {
 {{- define "games.persist" -}}
 {{- if and .Values.tls.enabled .Values.persistence.enabled -}}true{{- end -}}
 {{- end -}}
+
+{{/* A TLS Secret is mounted when any hostname group uses your own certificate. */}}
+{{- define "games.needTLSSecret" -}}
+{{- if .Values.tls.enabled -}}
+{{- if or (eq (default "acme" .Values.tls.mode) "secret") (and .Values.internalHosts.enabled (eq (default "internal" .Values.internalHosts.tlsMode) "secret")) -}}true{{- end -}}
+{{- end -}}
+{{- end -}}
