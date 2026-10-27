@@ -67,6 +67,13 @@ tls:
   # never try http:// again (sticky for a year, so turn on only once real certificates work).
   hsts: false
   staging: false     # true = use Let's Encrypt staging while testing, to avoid rate limits
+  # Where the certificates come from (only used when tls.enabled is true):
+  #   acme      Let's Encrypt, automatic (default). Needs the hostnames to be reachable from the internet.
+  #   internal  Caddy's own CA issues them. Works for private names; browsers warn until the root is trusted
+  #             (the root is /data/caddy/pki/authorities/local/root.crt inside the pod).
+  #   secret    your own certificate from a kubernetes.io/tls Secret (for example one issued by an internal CA).
+  mode: acme
+  secretName: rubrik-games-tls   # used when mode is secret; must cover every hostname
 
 # Keeps certificates across restarts (used only when tls.enabled is true).
 persistence:

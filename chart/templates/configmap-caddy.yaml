@@ -1,5 +1,6 @@
 {{- $scheme := ternary "" "http://" .Values.tls.enabled }}
 {{- $proto := ternary "https" "http" .Values.tls.enabled }}
+{{- $mode := default "acme" .Values.tls.mode }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -13,8 +14,11 @@ data:
       {{- if .Values.tls.email }}
       email {{ .Values.tls.email }}
       {{- end }}
-      {{- if .Values.tls.staging }}
+      {{- if and .Values.tls.staging (eq $mode "acme") }}
       acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+      {{- end }}
+      {{- if and .Values.tls.enabled (eq $mode "internal") }}
+      local_certs
       {{- end }}
       {{- if not .Values.tls.enabled }}
       auto_https off
@@ -26,6 +30,9 @@ data:
       {{- if and $.Values.tls.enabled $.Values.tls.hsts }}
       header Strict-Transport-Security "max-age=31536000"
       {{- end }}
+      {{- if and $.Values.tls.enabled (eq $mode "secret") }}
+      tls /etc/games-tls/tls.crt /etc/games-tls/tls.key
+      {{- end }}
       {{- include "games.menuRoutes" . | nindent 6 }}
     }
     {{- range .Values.apps }}
@@ -34,6 +41,9 @@ data:
       encode gzip
       {{- if and $.Values.tls.enabled $.Values.tls.hsts }}
       header Strict-Transport-Security "max-age=31536000"
+      {{- end }}
+      {{- if and $.Values.tls.enabled (eq $mode "secret") }}
+      tls /etc/games-tls/tls.crt /etc/games-tls/tls.key
       {{- end }}
       {{- if .frame }}
       root * /srv
@@ -52,6 +62,9 @@ data:
       encode gzip
       {{- if and $.Values.tls.enabled $.Values.tls.hsts }}
       header Strict-Transport-Security "max-age=31536000"
+      {{- end }}
+      {{- if and $.Values.tls.enabled (eq $mode "secret") }}
+      tls /etc/games-tls/tls.crt /etc/games-tls/tls.key
       {{- end }}
       reverse_proxy {{ .upstream }} {
         header_up X-Games-Menu {{ $proto }}://{{ $.Values.menu.host }}

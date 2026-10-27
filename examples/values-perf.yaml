@@ -1,0 +1,33 @@
+# Hostnames under the internal perf.rubrik.com zone, for the Private Link / VPN setup.
+# Layer after your own values and the private-link file:
+#   helm upgrade rubrik-games ./chart -n rubrik-games -f my-games-values.yaml -f examples/values-private-link.yaml -f examples/values-perf.yaml
+# A records for all three names must point at the Private Endpoint IP.
+#
+# tls.mode: internal  -> Caddy's own CA (quick; browsers warn until the root is trusted)
+# tls.mode: secret    -> certificate you provide (create it first):
+#   kubectl create secret tls rubrik-games-tls -n rubrik-games --cert=games.crt --key=games.key
+menu:
+  host: games.perf.rubrik.com
+
+apps:
+  - id: invaders
+    name: Rubrik Invaders
+    description: Defend the cluster from rival backup ships. Shoot the ransomware ship for a power-up.
+    color: "#18c8b4"
+    icon: image
+    host: invaders.games.perf.rubrik.com
+    upstream: rubrik-invaders.rubrik-invaders.svc.cluster.local:80
+    recentPath: /api/recent
+  - id: chase
+    name: Rubrik Chase
+    description: Outrun ransomware, phishing and friends through the maze. Power pellets turn the tables, but less each level.
+    color: "#18c8b4"
+    icon: image
+    host: chase.games.perf.rubrik.com
+    upstream: rubrik-chase.rubrik-chase.svc.cluster.local:80
+    recentPath: /api/recent
+
+tls:
+  enabled: true
+  mode: internal        # change to "secret" once you have a certificate from Rubrik IT
+  hsts: false           # leave off until the certificate is trusted

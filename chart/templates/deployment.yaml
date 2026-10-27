@@ -61,6 +61,11 @@ spec:
               mountPath: /data
             - name: config
               mountPath: /config
+            {{- if and .Values.tls.enabled (eq (default "acme" .Values.tls.mode) "secret") }}
+            - name: tls
+              mountPath: /etc/games-tls
+              readOnly: true
+            {{- end }}
       volumes:
         - name: caddyfile
           configMap:
@@ -77,6 +82,11 @@ spec:
           {{- end }}
         - name: config
           emptyDir: {}
+        {{- if and .Values.tls.enabled (eq (default "acme" .Values.tls.mode) "secret") }}
+        - name: tls
+          secret:
+            secretName: {{ .Values.tls.secretName }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
