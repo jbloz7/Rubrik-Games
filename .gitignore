@@ -4,3 +4,4 @@ my-*.yaml
 
 # Local branding, not published
 chart/files/rubrik-logo.svg
+caddy-root.crt
