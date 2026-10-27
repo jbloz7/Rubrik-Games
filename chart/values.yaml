@@ -81,6 +81,8 @@ service:
   #     service.beta.kubernetes.io/azure-pip-name: games-pip
   annotations: {}
   loadBalancerIP: ""
+  # Optional: only these CIDRs may reach the public IP, for example ["203.0.113.7/32"]. Empty = open to all.
+  loadBalancerSourceRanges: []
 
 resources:
   requests:

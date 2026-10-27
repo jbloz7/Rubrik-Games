@@ -1,0 +1,7 @@
+# Keep the public IP, but only your own address(es) can connect to it.
+#   helm upgrade rubrik-games ./chart -n rubrik-games -f my-games-values.yaml -f examples/values-restricted-public.yaml
+# Everyone else is blocked at the Azure network layer. Let's Encrypt is blocked too, so certificate renewal
+# fails while this is on: remove the restriction (run without this file) for a few minutes before renewals are due.
+service:
+  loadBalancerSourceRanges:
+    - 203.0.113.7/32      # replace with your public IP (curl ifconfig.me) or your office egress range

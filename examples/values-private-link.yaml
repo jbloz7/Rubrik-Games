@@ -1,0 +1,22 @@
+# Keep the gateway on an internal IP and publish it as an Azure Private Link Service (PLS),
+# so a Private Endpoint in another VNet (for example RR2) can reach just this one service.
+#   helm upgrade rubrik-games ./chart -n rubrik-games -f my-games-values.yaml -f examples/values-private-link.yaml
+# Back to the plain internal IP: run the same command with examples/values-internal.yaml instead.
+#
+# Replace the subscription ID with the one that will own the Private Endpoint. It limits who can see the
+# PLS (visibility) and which requests are approved automatically (auto-approval).
+# Annotation reference: https://cloud-provider-azure.sigs.k8s.io/topics/pls-integration/
+#
+# Needs the subnet's private link service network policy disabled (if PLS creation fails):
+#   az network vnet subnet update -g <node-rg> --vnet-name <aks-vnet> -n aks-subnet --disable-private-link-service-network-policies true
+service:
+  annotations:
+    service.beta.kubernetes.io/azure-pip-name: null
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    service.beta.kubernetes.io/azure-pls-create: "true"
+    service.beta.kubernetes.io/azure-pls-name: "rubrik-games-pls"
+    service.beta.kubernetes.io/azure-pls-ip-configuration-subnet: "aks-subnet"
+    service.beta.kubernetes.io/azure-pls-ip-configuration-ip-address-count: "1"
+    service.beta.kubernetes.io/azure-pls-visibility: "b2e9b0af-7820-42f8-b1cb-e9780a1cde59"
+    service.beta.kubernetes.io/azure-pls-auto-approval: "b2e9b0af-7820-42f8-b1cb-e9780a1cde59"
+  loadBalancerIP: ""

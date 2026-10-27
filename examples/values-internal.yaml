@@ -1,0 +1,18 @@
+# Keep the gateway online, but only on a private (internal) IP inside the VNet.
+# Layer this on top of your own values file (later -f files win):
+#   helm upgrade rubrik-games ./chart -n rubrik-games -f my-games-values.yaml -f examples/values-internal.yaml
+# Back to public: run the same command without the last -f. Re-attach your static IP annotation by keeping it in
+# my-games-values.yaml (the override below blanks it for the internal run).
+#
+# Notes
+#  - Reachable only from the cluster VNet or anything connected to it (VPN, peering, jump host).
+#  - Point the hostnames at the private IP (kubectl get svc rubrik-games -n rubrik-games): private DNS, or a
+#    hosts-file entry per hostname, because the public wildcard still points at the public IP.
+#  - Let's Encrypt cannot reach a private IP, so certificates cannot be issued or renewed while internal.
+#    Existing certificates keep working until they expire (about 90 days), so go public briefly before then.
+service:
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    # service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "<subnet-name>"   # optional
+    service.beta.kubernetes.io/azure-pip-name: null
+  loadBalancerIP: ""
