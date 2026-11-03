@@ -1,5 +1,7 @@
 {{- $proto := ternary "https" "http" .Values.tls.enabled }}
 {{- $logo := .Files.Get "files/rubrik-logo.svg" }}
+{{- $n := len .Values.apps }}
+{{- $rowW := min 850 (add (mul $n 270) (mul (sub $n 1) 20)) }}
 {{- $recent := list }}
 {{- range .Values.apps }}{{ if and .recentPath (not .comingSoon) }}{{ $recent = append $recent (dict "id" .id "name" .name "color" (default "#18c8b4" .color)) }}{{ end }}{{ end }}
 apiVersion: v1
@@ -42,7 +44,7 @@ data:
       .card.soon:hover { transform:none; border-color:var(--line); }
       .card.soon h2 { opacity:.85; }
       .btn.soon { background:transparent; color:var(--muted); border:1px dashed var(--muted); font-weight:600; }
-      .recent { width:100%; max-width:580px; margin:8px 20px 0; padding:18px 22px; background:var(--panel);
+      .recent { width:100%; max-width:850px; margin:8px 20px 0; padding:18px 22px; background:var(--panel);
                 border:1px solid var(--line); border-radius:14px; }
       .recent h3 { margin:0 0 10px; font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
       .recent ul { list-style:none; margin:0; padding:0; }
@@ -96,7 +98,7 @@ data:
     {{- end }}
     </div>
     {{- if $recent }}
-    <section class="recent" id="recent" hidden>
+    <section class="recent" id="recent" style="max-width:{{ $rowW }}px" hidden>
       <h3>Recent players</h3>
       <ul id="recent-list"></ul>
     </section>
