@@ -38,8 +38,8 @@ data:
       .card h2 svg { width:34px; height:28px; flex:none; }
       .card h2 img { height:30px; width:auto; flex:none; }
       .card p { margin:0 0 18px; color:var(--muted); font-size:14px; line-height:1.45; min-height:62px; flex:1; }
-      .btn { display:inline-block; align-self:flex-start; background:var(--c, var(--accent)); color:#06101a; font-weight:700;
-             padding:8px 16px; border-radius:8px; font-size:14px; }
+      .btn { display:inline-block; align-self:center; text-align:center; min-width:150px; background:var(--c, var(--accent)); color:#06101a; font-weight:700;
+             padding:11px 22px; border-radius:10px; font-size:16px; }
       .card.soon { cursor:default; }
       .card.soon:hover { transform:none; border-color:var(--line); }
       .card.soon h2 { opacity:.85; }
