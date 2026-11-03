@@ -29,14 +29,14 @@ data:
       h1 { margin:0; font-size:34px; letter-spacing:.18em; text-transform:uppercase; }
       .sub { color:var(--muted); margin-top:10px; }
       .grid { display:flex; flex-wrap:wrap; gap:20px; justify-content:center; padding:24px 20px; max-width:940px; }
-      .card { display:block; width:270px; padding:22px; background:var(--panel); border:1px solid var(--line);
+      .card { display:flex; flex-direction:column; width:270px; padding:22px; background:var(--panel); border:1px solid var(--line);
               border-radius:14px; color:var(--text); text-decoration:none; transition:transform .15s, border-color .15s; }
       .card:hover { transform:translateY(-4px); border-color:var(--c, var(--accent)); }
       .card h2 { margin:0 0 8px; font-size:20px; color:var(--c, var(--accent)); display:flex; align-items:center; gap:10px; }
       .card h2 svg { width:34px; height:28px; flex:none; }
       .card h2 img { height:30px; width:auto; flex:none; }
-      .card p { margin:0 0 18px; color:var(--muted); font-size:14px; line-height:1.45; min-height:62px; }
-      .btn { display:inline-block; background:var(--c, var(--accent)); color:#06101a; font-weight:700;
+      .card p { margin:0 0 18px; color:var(--muted); font-size:14px; line-height:1.45; min-height:62px; flex:1; }
+      .btn { display:inline-block; align-self:flex-start; background:var(--c, var(--accent)); color:#06101a; font-weight:700;
              padding:8px 16px; border-radius:8px; font-size:14px; }
       .card.soon { cursor:default; }
       .card.soon:hover { transform:none; border-color:var(--line); }
