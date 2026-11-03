@@ -7,7 +7,7 @@ The apps it fronts are separate repos:
 - [Rubrik-Invaders](https://github.com/jbloz7/Rubrik-Invaders), a space-invaders-style game
 - [Rubrik-Chase](https://github.com/jbloz7/Rubrik-Chase), an original maze-chase game
 
-Add another app by adding an entry to the `apps` list in your values file.
+Add another app by adding an entry to the `apps` list in your values file. To announce an app before it is deployed, give the entry `comingSoon: true`: the card shows its logo and description with a "Coming soon" badge instead of a Play button, and no route or recent-players lookup is created, so `host` and `upstream` can be left out. Remove the flag and add them when the app goes live.
 
 ## Install
 

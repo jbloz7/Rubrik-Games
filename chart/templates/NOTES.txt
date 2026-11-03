@@ -6,7 +6,9 @@ Rubrik Games gateway installed as release "{{ .Release.Name }}" in namespace "{{
 2. Point DNS at that IP. Create A records (or one wildcard record) for:
      {{ .Values.menu.host }}   (the menu)
 {{- range .Values.apps }}
+{{- if not .comingSoon }}
      {{ .host }}   ({{ .name }})
+{{- end }}
 {{- end }}
 {{- if .Values.tls.enabled }}
 

@@ -42,6 +42,9 @@ apps:
   #             The menu shows these under "Recent players". Leave empty for apps without one.
   # frame       optional: true serves the app inside a thin "Back to <menu title>" bar. The app then needs a second
   #             hostname, rawHost, with its own DNS record. For apps you can't edit. The app must allow being framed.
+  # comingSoon  optional: true shows the card with a "Coming soon" badge instead of a Play button. The card is not a
+  #             link, and no Caddy route or recent-players lookup is created, so host and upstream can be left out.
+  #             Remove the flag (and add host, upstream and recentPath) when the app goes live.
   - id: invaders
     name: Rubrik Invaders
     description: Defend the cluster from rival backup ships. Shoot the ransomware ship for a power-up.

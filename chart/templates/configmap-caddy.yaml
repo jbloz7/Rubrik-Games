@@ -34,7 +34,7 @@ data:
       {{- include "games.menuRoutes" . | nindent 6 }}
     }
     {{- range .Values.apps }}
-    {{- if not .frame }}
+    {{- if and (not .frame) (not .comingSoon) }}
 
     (app_{{ .id }}) {
       encode gzip
@@ -56,6 +56,7 @@ data:
       import menu_site
     }
     {{- range .Values.apps }}
+    {{- if not .comingSoon }}
 
     {{ $scheme }}{{ .host }} {
       {{- if and $.Values.tls.enabled $.Values.tls.hsts }}
@@ -91,6 +92,7 @@ data:
     }
     {{- end }}
     {{- end }}
+    {{- end }}
     {{- if and $internalOn .Values.menu.internalHost }}
 
     # ---- internal hostnames (reached through the internal load balancer / Private Link)
@@ -106,7 +108,7 @@ data:
       import menu_site
     }
     {{- range .Values.apps }}
-    {{- if and .internalHost (not .frame) }}
+    {{- if and .internalHost (not .frame) (not .comingSoon) }}
 
     {{ .internalHost }} {
       {{- if $.Values.internalHosts.hsts }}

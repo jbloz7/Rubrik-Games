@@ -1,7 +1,7 @@
 {{- $proto := ternary "https" "http" .Values.tls.enabled }}
 {{- $logo := .Files.Get "files/rubrik-logo.svg" }}
 {{- $recent := list }}
-{{- range .Values.apps }}{{ if .recentPath }}{{ $recent = append $recent (dict "id" .id "name" .name "color" (default "#18c8b4" .color)) }}{{ end }}{{ end }}
+{{- range .Values.apps }}{{ if and .recentPath (not .comingSoon) }}{{ $recent = append $recent (dict "id" .id "name" .name "color" (default "#18c8b4" .color)) }}{{ end }}{{ end }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -38,6 +38,10 @@ data:
       .card p { margin:0 0 18px; color:var(--muted); font-size:14px; line-height:1.45; min-height:62px; }
       .btn { display:inline-block; background:var(--c, var(--accent)); color:#06101a; font-weight:700;
              padding:8px 16px; border-radius:8px; font-size:14px; }
+      .card.soon { cursor:default; }
+      .card.soon:hover { transform:none; border-color:var(--line); }
+      .card.soon h2 { opacity:.85; }
+      .btn.soon { background:transparent; color:var(--muted); border:1px dashed var(--muted); font-weight:600; }
       .recent { width:100%; max-width:580px; margin:8px 20px 0; padding:18px 22px; background:var(--panel);
                 border:1px solid var(--line); border-radius:14px; }
       .recent h3 { margin:0 0 10px; font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
@@ -66,7 +70,11 @@ data:
     </header>
     <div class="grid">
     {{- range .Values.apps }}
+      {{- if .comingSoon }}
+      <div class="card soon" aria-disabled="true" style="--c: {{ default "#18c8b4" .color }}">
+      {{- else }}
       <a class="card" href="{{ $proto }}://{{ .host }}"{{ if and $.Values.menu.internalHost .internalHost }} data-internal="https://{{ .internalHost }}"{{ end }} style="--c: {{ default "#18c8b4" .color }}">
+      {{- end }}
         <h2>
           {{- if eq (default "" .icon) "ship" }}
           <svg viewBox="-26 -21 52 40" aria-hidden="true"><path d="M0-18 10-3 24 10V15L8 9H-8L-24 15V10L-10-3Z" fill="currentColor"/><ellipse cx="0" cy="-9" rx="2.6" ry="5" fill="#fff"/><g stroke="#fff" stroke-width="1.5" stroke-linecap="round"><path d="M0-3V9M-5.6 0 5.6 6M-5.6 6 5.6 0"/></g></svg>
@@ -78,8 +86,13 @@ data:
           <span>{{ .name | html }}</span>
         </h2>
         <p>{{ .description | html }}</p>
+        {{- if .comingSoon }}
+        <span class="btn soon">Coming soon</span>
+      </div>
+        {{- else }}
         <span class="btn">Play</span>
       </a>
+        {{- end }}
     {{- end }}
     </div>
     {{- if $recent }}

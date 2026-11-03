@@ -18,7 +18,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{/* Caddy routes for the menu site: /api/recent/<id> is proxied to each app's recent-games path, everything else is the menu page. */}}
 {{- define "games.menuRoutes" -}}
 {{- range .Values.apps }}
-{{- if .recentPath }}
+{{- if and .recentPath (not .comingSoon) }}
 handle /api/recent/{{ .id }} {
   rewrite * {{ .recentPath }}
   reverse_proxy {{ .upstream }}
